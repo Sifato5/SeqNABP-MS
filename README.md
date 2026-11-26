@@ -2,7 +2,7 @@
 
 **Multiscale Sequence Modeling and Confidence-Aware Classification of Nucleic Acid-Binding Proteins**
 
-SeqNABP-MS is a sequence-based deep learning framework for identifying nucleic acid-binding proteins (NABPs) and resolving their fine-grained binding specificities across four functional classes:
+SeqNABP-MS is a sequence-based deep learning framework for identifying nucleic acid-binding proteins (NABPs) and resolving their binding specificities across four functional classes:
 * **non-NABP**: Non-nucleic acid-binding proteins
 * **RBP**: RNA-binding proteins
 * **DSB**: Double-stranded DNA-binding proteins
@@ -10,27 +10,30 @@ SeqNABP-MS is a sequence-based deep learning framework for identifying nucleic a
 
 ---
 
+## Model Overview
+* **PLM Residue Representations**: Extracts per-residue embeddings from ESM-2 (`esm2_t36_3B_UR50D`, Layer 36).
+* **Hybrid Sequence Encoder**: Combines multiscale residual dilated convolutions, selective state-space modeling (Mamba), and multi-head self-attention via adaptive gated fusion.
+* **Attentive Statistical Pooling**: Aggregates residue features using attention-weighted mean, standard deviation, global mean, and global max.
+* **Unified Multi-Task & Pathway Fusion**: Jointly optimizes direct four-class logits and hierarchical conditional pathways (`NABP -> DBP/RBP -> SSB/DSB`).
+
+---
+
 ## Repository Structure
 
 ```text
 seqnabp/
-├── config.json                              # Model & training configuration
-├── requirements.txt                         # Python dependencies
+├── config.json          # Model and training hyperparameters
+├── requirements.txt     # Python dependencies
 ├── data/
-│   └── proteins.csv                         # Input sequences, labels
+│   └── proteins.csv     # Input sequences, labels, and cluster IDs
 └── src/
-    ├── utils.py                             # Label maps, seeding, device helpers
-    ├── embeddings.py                        # ESM-2 extraction to .safetensors
-    ├── data_utils.py                        # Lazy SafeTensors dataset & collation
-    ├── model.py                             # SeqNABP-MS architecture definition
-    ├── train.py                             # Fold training & probability fusion
-    ├── evaluate.py                          # Multi-class evaluation metrics
-    ├── cv.py                                # 5-fold cluster-grouped CV runner
-    ├── export_paper_tables.py               # Per-class & hierarchical summary tables
-    ├── analysis1_attention_map.py           # Residue-level attention profiles
-    ├── analysis2_calibration_uncertainty.py # Temperature scaling & risk-coverage
-    ├── analysis3_error_breakdown.py         # Confusion matrix, ROC/PR, length bins
-    └── analysis4_homology_generalization.py # Cluster & sequence identity evaluation
+    ├── utils.py         # Label mappings, seeding, and device utilities
+    ├── embeddings.py    # ESM-2 residue embedding extraction (.safetensors)
+    ├── data_utils.py    # Lazy SafeTensors dataset and batch collation
+    ├── model.py         # SeqNABPX network architecture
+    ├── train.py         # Single-fold training and probability fusion
+    ├── evaluate.py      # Multi-class evaluation metrics
+    └── cv.py            # 5-fold cluster-grouped cross-validation pipeline
 ```
 
 ---
@@ -43,12 +46,12 @@ seqnabp/
    conda activate seqnabp
    ```
 
-2. **Install PyTorch with CUDA support** (adjust CUDA version for your GPU):
+2. **Install PyTorch with CUDA support** (match your local CUDA version):
    ```bash
    pip install torch --index-url https://pytorch.org
    ```
 
-3. **Install remaining dependencies (including `safetensors` and `mamba-ssm`):**
+3. **Install remaining dependencies:**
    ```bash
    pip install -r requirements.txt
    ```
@@ -58,49 +61,34 @@ seqnabp/
 
 ## Usage
 
-### Step 1: Prepare Input Data & Checkpoint
+### 1. Prepare Input Data and ESM-2 Checkpoint
 Place your dataset at `data/proteins.csv` with the following columns:
 * `protein_id`: Unique sequence identifier
 * `sequence`: Amino acid sequence (length 40–1,500 aa)
 * `label`: One of `nonNABP`, `RBP`, `DSB`, or `SSB`
-* `cluster_id`: Homology cluster identifier (e.g., from CD-HIT at 40% identity)
+* `cluster_id`: Homology cluster identifier (e.g., CD-HIT at 40% sequence identity)
 
-Download the pretrained ESM-2 checkpoint (`esm2_t36_3B_UR50D.pt`) and set its path in `config.json`.
+Download the pretrained ESM-2 checkpoint (`esm2_t36_3B_UR50D.pt`) and specify its path in `config.json`.
 
-### Step 2: Extract ESM-2 Residue Embeddings
-Extract and store per-residue embeddings in `.safetensors` format alongside a lightweight JSON metadata index:
+### 2. Extract ESM-2 Residue Embeddings
+Generate per-residue embeddings in `.safetensors` format alongside the metadata sidecar JSON:
 ```bash
 python -m src.embeddings --config config.json
 ```
 
-### Step 3: Run 5-Fold Cluster-Grouped Cross-Validation
+### 3. Run 5-Fold Cluster-Grouped Cross-Validation
 Train and evaluate SeqNABP-MS across all five homology-controlled folds:
 ```bash
 python -m src.cv --config config.json
 ```
-Outputs (`fold_1.pt`–`fold_5.pt`, `fold_metrics.csv`, `oof_predictions.csv`, and `cv_summary.json`) are saved in `results/`.
-
-### Step 4: Downstream Calibration, Error, and Interpretability Analyses
-```bash
-# Export 5-fold Mean ± SD class-wise and hierarchical tables
-python -m src.export_paper_tables --config config.json
-
-# Run post-hoc temperature scaling & risk-coverage analysis
-python -m src.analysis2_calibration_uncertainty --config config.json
-
-# Generate confusion matrix, ROC/PR curves, and sequence-length breakdown
-python -m src.analysis3_error_breakdown --config config.json
-
-# Generate residue-level attention maps on query FASTA files
-python -m src.analysis1_attention_map --config config.json --fold 1
-```
+Checkpoints (`fold_1.pt`–`fold_5.pt`), fold-wise metrics (`fold_metrics.csv`), out-of-fold predictions (`oof_predictions.csv`), and summary statistics (`cv_summary.json`) will be saved in `results/`.
 
 ---
 
 ## Citation
 
-If you use SeqNABP-MS or this codebase in your research, please cite our work:
+If you use SeqNABP-MS in your research, please cite:
 
 ```bibtex
-Citation will be available once accept.
+Citation will available once accept.
 ```
