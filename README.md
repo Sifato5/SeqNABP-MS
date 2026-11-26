@@ -11,6 +11,11 @@ SeqNABP-MS is a sequence-based deep learning framework for identifying nucleic a
 ---
 
 ## Model Overview
+
+<p align="center">
+  <img src="SeqNABP-MS.png">
+</p>
+
 * **PLM Residue Representations**: Extracts per-residue embeddings from ESM-2 (`esm2_t36_3B_UR50D`, Layer 36).
 * **Hybrid Sequence Encoder**: Combines multiscale residual dilated convolutions, selective state-space modeling (Mamba), and multi-head self-attention via adaptive gated fusion.
 * **Attentive Statistical Pooling**: Aggregates residue features using attention-weighted mean, standard deviation, global mean, and global max.
