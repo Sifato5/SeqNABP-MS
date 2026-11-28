@@ -95,5 +95,5 @@ Checkpoints (`fold_1.pt`–`fold_5.pt`), fold-wise metrics (`fold_metrics.csv`),
 If you use SeqNABP-MS in your research, please cite:
 
 ```bibtex
-Citation will available once accept.
+Citation to be added once available.
 ```
